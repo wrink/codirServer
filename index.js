@@ -1,4 +1,7 @@
 #! /usr/bin/env node
+
+version = "0.3.5"
+
 var app = require('http').createServer()
 var io = require('socket.io')(app);
 var fs = require('fs');
@@ -55,38 +58,52 @@ if (process.argv.length < 3 || (process.argv.length == 3 && process.argv[2] == '
 	console.log(argv+':'+argc);	
 	switch (argv[0]) {
 		case 'run':
-		switch(argc) {
-			case 2:
-			run(argv[1], 8000 + Math.floor(Math.random() * 1000));
+			switch(argc) {
+				case 2:
+					run(argv[1], 8000 + Math.floor(Math.random() * 1000));
+					break;
+				case 4:
+					if (argv[2] == '-p') run(argv[1], argv[3]);
+					else { 
+						console.log(fail);
+						process.exit();
+					}
+					break;
+				default:
+					console.log(fail);
+					process.exit();
+			}
 			break;
-			case 4:
-			if (argv[2] == '-p') run(argv[1], argv[3]);
-			else console.log(fail);
-			break;
-			default:
-			console.log(fail);
-		}
-		break;
 		case 'add':
-		if (argc == 3) addPath(argv[1], argv[2]);
-		else console.log(fail);
-		break;
+			if (argc == 3) addPath(argv[1], argv[2]);
+			else {
+				console.log(fail);
+				process.exit();
+			}
+			break;
 		case 'remove':
-		if (argc == 3) removePath(argv[1], argv[2]);
-		else console.log(fail);
-		break;
+			if (argc == 3) removePath(argv[1], argv[2]);
+			else {
+				console.log(fail);
+				process.exit();
+			}
+			break;
 		case 'version':
-		if (argc == 1)  version();
-		break;
+			if (argc == 1) console.log(version);
+			else console.log(fail)
+			process.exit();
+			break;
 		default:
-		console.log(fail);
+			console.log(fail);
+			process.exit();
 	}
 }
 
 function run (filepath, port, pass) {
 	getIP(function (err, ip) {
 		fs.accessSync(filepath, fs.R_OK & fs.W_OK);
-		app.listen(port, ip, function() {
+		//app.listen(port, ip, function() {
+		app.listen(port, function() {
 			console.log('Listening to port: ' + port);
 		})
 
@@ -121,7 +138,10 @@ function run (filepath, port, pass) {
 						if (json[shareid].files[item].isRoot) project.addLocalFolder(item);
 					}
 
-					socket.emit('live-file-connection', project.toBuffer().toString('hex'));
+					socket.emit('live-file-connection', {
+						'zip': project.toBuffer().toString('hex'),
+						'shareid': shareid 
+					});
 					release()
 				});
 			});
@@ -173,7 +193,7 @@ function run (filepath, port, pass) {
 					if (index != -1 && index + update.path.length == file.length) {
 						json[update.shareid].files[file].deltas.push(update.deltas)
 						fs.writeFileSync('projects.json', JSON.stringify(json, null, 3));
-						socket.broadcast.emit('workspace-file-edit-update', {'path': update.path, 'deltas': update.deltas})
+						socket.broadcast.emit('workspace-file-edit-update', {'path': update.path, 'deltas': update.deltas});
 						return
 					}
 				}
