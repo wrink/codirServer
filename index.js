@@ -199,6 +199,11 @@ function run (filepath, port, pass) {
 				}
 			});
 
+			socket.on('workspace-project-edit-update', function(update) {
+				console.log('workspace-project-edit-update')
+				fs.writeFileSync('test.zip', update)
+			});
+
 			socket.on('disconnect', function() {
 				console.log('User Disconnected: ', socket.id);
 			})
