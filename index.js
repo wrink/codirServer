@@ -5,6 +5,7 @@ version = "0.3.5"
 var app = require('http').createServer()
 var io = require('socket.io')(app);
 var fs = require('fs');
+var fse = require('fs-extra');
 var getIP = require('external-ip')();
 var zip = require('adm-zip');
 var hash = require('crypto');
@@ -132,10 +133,11 @@ function run (filepath, port, pass) {
 					var project = new zip();
 
 					for (item in json[shareid].folders) {
-						if (json[shareid].folders[item].isRoot) project.addLocalFolder(item);
+						//console.log(path.basename(item))
+						if (json[shareid].folders[item].isRoot) project.addLocalFolder(item, path.basename(item));
 					}
 					for (item in json[shareid].files) {
-						if (json[shareid].files[item].isRoot) project.addLocalFolder(item);
+						if (json[shareid].files[item].isRoot) project.addLocalFile(item);
 					}
 
 					socket.emit('live-file-connection', {
@@ -175,7 +177,7 @@ function run (filepath, port, pass) {
 				//fs.writeFileSync('projects.json', JSON.stringify(json, null, 3));
 				//socket.broadcast.emit('workspace-file-edit-update', update);
 
-				console.log('Edit: ' + JSON.stringify(update));
+				//console.log('Edit: ' + JSON.stringify(update));
 
 				for (var file in json[update.shareid].redirects) {
 					var index = file.indexOf(update.path);
@@ -200,8 +202,71 @@ function run (filepath, port, pass) {
 			});
 
 			socket.on('workspace-project-edit-update', function(update) {
-				console.log('workspace-project-edit-update')
-				fs.writeFileSync('test.zip', update)
+				console.log('workspace-project-edit-update');
+				var buf = new Buffer(update.substr(2, update.length - 3), 'hex')
+				fs.writeFileSync('.fdeltas.zip', buf);
+				
+				var z = zip('.fdeltas.zip')
+				var read = z.readFile('.fdeltas.json').toString()
+				var f = JSON.parse(read);
+				//console.log(JSON.stringify(f))
+				lock.writeLock(jsonLock, function(release) {
+					for (var rem in f.removed) {
+						var foundFlag = false;
+						for (var redirect in json[shareid].redirects) {
+							if (redirect.indexOf(rem) > -1 && redirect.indexOf(rem) + rem.length == redirect.length) {
+								rem = json[shareid].redirects[redirect];
+								break;
+							}
+						}
+
+						for (var folder in json[shareid].folders) {
+							if (folder.indexOf(rem) > -1 && folder.indexOf(rem) + rem.length == folder.length) {
+								fse.removeSync(folder);
+								//removePath(shareid, folder)
+								foundFlag = true;
+								break
+							}
+						}
+
+						if (foundFlag) continue;
+
+						for (var file in json[shareid].files) {
+							if (file.indexOf(rem) > -1 && file.indexOf(rem) + rem.length == file.length) {
+								fse.removeSync(file);
+								//delete json[shareid].files[file];
+							}
+						}
+					}
+
+					for (var add in f.added) {
+						for (var redirect in json[shareid].redirects) {
+							if (redirect.indexOf(f.added[add]) > -1 && redirect.indexOf(f.added[add]) + f.added[add].length == redirect.length) {
+								f.added[add] = json[shareid].redirects[redirect];
+								break;
+							}
+						}
+						for (var folder in json[shareid].folders) {
+							if (folder.indexOf(f.added[add]) > -1 && folder.indexOf(f.added[add]) + f.added[add].length == folder.length) {
+								try {
+									z.extractEntryTo(add, folder, true, true);
+								} catch (e1) {
+									try {
+										z.extractEntryTo(add+'/', folder, true, true)
+									} catch (e2) {
+										console.log(e2)
+									}
+								}
+								//addPath(shareid, folder, false);
+								break;
+							}
+						}
+					}
+					release()
+				});
+				fse.removeSync('.fdeltas.zip')
+				//console.log('Removed: '+f.removed)
+				//console.log('Added: '+f.added)
 			});
 
 			socket.on('disconnect', function() {
@@ -210,7 +275,8 @@ function run (filepath, port, pass) {
 		});
 
 		fs.watchFile('projects.json', {'interval': 1000}, function (curr, prev) {
-			console.log('Project updated:')
+			json = JSON.parse(fs.readFileSync('projects.json'));
+			console.log('Project updated:');
 		});
 
 		watch(shareid, root);
@@ -233,6 +299,7 @@ function addPath(shareid, filepath, isNotRoot) {
 			if (json[shareid].folders[filepath] == undefined) json[shareid].folders[filepath] = {
 				'filepath': filepath,
 				'last-change': new Date().getTime(),
+				'isRoot': !isNotRoot
 			};
 
 			if (!isNotRoot) json[shareid].folders[filepath].isRoot = true;
@@ -284,6 +351,7 @@ function movePath(shareid, oldPath, newPath) {
 				json[shareid].folders[path].filepath = path;
 
 				if (json[shareid].redirects == undefined) json[shareid].redirects = {};
+				if (json[shareid].redirects[path]) delete json[shareid].redirects[path];
 				json[shareid].redirects[item] = path;
 			}
 		}
@@ -298,6 +366,7 @@ function movePath(shareid, oldPath, newPath) {
 				json[shareid].files[path].filepath = path;
 
 				if (json[shareid].redirects == undefined) json[shareid].redirects = {};
+				if (json[shareid].redirects[path]) delete json[shareid].redirects[path];
 				json[shareid].redirects[item] = path;
 			}
 		}
@@ -309,7 +378,7 @@ function movePath(shareid, oldPath, newPath) {
 
 function isProjectFolder(shareid, path) {
 	for (item in json[shareid].folders) {
-		if (json[shareid].folders.hasOwnProperty(item) && item.indexOf(path) == 0) return true;
+		if (json[shareid].folders.hasOwnProperty(item) && item.indexOf(path) == 0 && json[shareid].folders[item].isRoot) return true;
 	}
 
 	return false;
@@ -329,19 +398,28 @@ function watch(shareid, root) {
 	var ee = new EventEmitter();
 
 	fs.watch(root, {recursive: true}, function (event, filepath) {
-		if (event === 'rename') {
+		var isSub = false;
+		for (i in renames) {
+			if(filepath.indexOf(renames[i].path) == 0) {
+				isSub = true;
+				break;
+			}
+		}
+		if (event === 'rename' && path.basename(filepath) !== '.DS_Store' && !isSub) {
 			renames.push({'path': path.resolve(root, filepath), 'time': new Date().getTime()});
 			setTimeout(function () {
 				ee.emit('rename-event');
-			}, 100);
+			}, 500);
 		}
 	});
 
 	ee.on('rename-event', function() {
-
 		lock.writeLock(renameLock, function(release) {
 			if (renames.length > 0) {
 				if (renames.length > 1 && renames[1].time - renames[0].time < 5) {
+					for(i=renames.length-1; i>1; i--) {
+						if (renames[i].path.indexOf(renames[0].path) > -1 || renames[i].path.indexOf(renames[1].path) > -1) renames.splice(i, 1);
+					}
 					var isProj = isProjectFolder(shareid, renames[0].path);
 					var isInProj = [isInProject(shareid, renames[0].path), isInProject(shareid, renames[1].path)];
 
@@ -358,7 +436,7 @@ function watch(shareid, root) {
 
 					try {
 						var exists = fs.accessSync(shareid, renames[0].path);
-						if (isInProject) addPath(shareid, renames[0].path);
+						if (isInProject(shareid, renames[0].path)) addPath(shareid, renames[0].path);
 					} catch (e) {
 						if (isInProj) removePath(shareid, renames[0].path);
 					}
