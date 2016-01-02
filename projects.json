@@ -1,1 +1,72 @@
-{}
+{
+   "24.45.203.181:8001": {
+      "folders": {
+         "/Users/david/Desktop/hw4-dew": {
+            "filepath": "/Users/david/Desktop/hw4-dew",
+            "last-change": 1451718439337,
+            "isRoot": true
+         },
+         "/Users/david/Desktop/hw4-dew/a.in.dSYM": {
+            "filepath": "/Users/david/Desktop/hw4-dew/a.in.dSYM",
+            "last-change": 1451718439369,
+            "isRoot": false
+         },
+         "/Users/david/Desktop/hw4-dew/a.in.dSYM/Contents": {
+            "filepath": "/Users/david/Desktop/hw4-dew/a.in.dSYM/Contents",
+            "last-change": 1451718439371,
+            "isRoot": false
+         },
+         "/Users/david/Desktop/hw4-dew/a.in.dSYM/Contents/Resources": {
+            "filepath": "/Users/david/Desktop/hw4-dew/a.in.dSYM/Contents/Resources",
+            "last-change": 1451718439372,
+            "isRoot": false
+         }
+      },
+      "files": {
+         "/Users/david/Desktop/hw4-dew/.DS_Store": {
+            "filepath": "/Users/david/Desktop/hw4-dew/.DS_Store",
+            "deltas": [],
+            "last-change": 1451718439346
+         },
+         "/Users/david/Desktop/hw4-dew/BACKING_STORE.bin": {
+            "filepath": "/Users/david/Desktop/hw4-dew/BACKING_STORE.bin",
+            "deltas": [],
+            "last-change": 1451718439368
+         },
+         "/Users/david/Desktop/hw4-dew/a.out": {
+            "filepath": "/Users/david/Desktop/hw4-dew/a.out",
+            "deltas": [],
+            "last-change": 1451718439369
+         },
+         "/Users/david/Desktop/hw4-dew/hw4-dew-modified.c": {
+            "filepath": "/Users/david/Desktop/hw4-dew/hw4-dew-modified.c",
+            "deltas": [],
+            "last-change": 1451718439370
+         },
+         "/Users/david/Desktop/hw4-dew/hw4-dew-unmodified.c": {
+            "filepath": "/Users/david/Desktop/hw4-dew/hw4-dew-unmodified.c",
+            "deltas": [],
+            "last-change": 1451718439370
+         },
+         "/Users/david/Desktop/hw4-dew/a.in.dSYM/Contents/Info.plist": {
+            "filepath": "/Users/david/Desktop/hw4-dew/a.in.dSYM/Contents/Info.plist",
+            "deltas": [],
+            "last-change": 1451718439371
+         },
+         "/Users/david/Desktop/hw4-dew/a.in.dSYM/Contents/Resources/DWARF/a.out": {
+            "filepath": "/Users/david/Desktop/hw4-dew/a.in.dSYM/Contents/Resources/DWARF/a.out",
+            "deltas": [],
+            "last-change": 1451718439373
+         }
+      },
+      "redirects": {
+         "/Users/david/Desktop/hw4-dew/a.in.dSYM/Contents/Resources/DWARF": "/Users/david/Desktop/hw4-dew/a.out.dSYM/Contents/Resources/DWARF",
+         "/Users/david/Desktop/hw4-dew/a.out.dSYM": "/Users/david/Desktop/hw4-dew/a.in.dSYM",
+         "/Users/david/Desktop/hw4-dew/a.out.dSYM/Contents": "/Users/david/Desktop/hw4-dew/a.in.dSYM/Contents",
+         "/Users/david/Desktop/hw4-dew/a.out.dSYM/Contents/Resources": "/Users/david/Desktop/hw4-dew/a.in.dSYM/Contents/Resources",
+         "/Users/david/Desktop/hw4-dew/a.out.dSYM/Contents/Info.plist": "/Users/david/Desktop/hw4-dew/a.in.dSYM/Contents/Info.plist",
+         "/Users/david/Desktop/hw4-dew/a.out.dSYM/Contents/Resources/DWARF/a.out": "/Users/david/Desktop/hw4-dew/a.in.dSYM/Contents/Resources/DWARF/a.out"
+      },
+      "last-change": {}
+   }
+}

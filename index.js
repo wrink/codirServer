@@ -249,12 +249,13 @@ function run (filepath, port, pass) {
 						for (var folder in json[shareid].folders) {
 							if (folder.indexOf(f.added[add]) > -1 && folder.indexOf(f.added[add]) + f.added[add].length == folder.length) {
 								try {
-									z.extractEntryTo(add, folder, true, true);
+									z.extractEntryTo(add.substr(f.added[add].length+1), folder, true, true);
 								} catch (e1) {
 									try {
-										z.extractEntryTo(add+'/', folder, true, true)
+										z.extractEntryTo(add.substr(f.added[add].length+1)+'/', folder, true, true)
 									} catch (e2) {
 										console.log(e2)
+										console.log(add.substr(f.added[add].length)+'/')
 									}
 								}
 								//addPath(shareid, folder, false);
@@ -416,10 +417,17 @@ function watch(shareid, root) {
 	ee.on('rename-event', function() {
 		lock.writeLock(renameLock, function(release) {
 			if (renames.length > 0) {
-				if (renames.length > 1 && renames[1].time - renames[0].time < 5) {
-					for(i=renames.length-1; i>1; i--) {
-						if (renames[i].path.indexOf(renames[0].path) > -1 || renames[i].path.indexOf(renames[1].path) > -1) renames.splice(i, 1);
+				for (i = 0; i < renames.length; i++) {
+					for (j = i+1; j < renames.length; j++) {
+						if (renames[i].path.indexOf(renames[j].path) != -1) renames.splice(i, 1);
+						else if (renames[j].path.indexOf(renames[i].path) != -1) renames.splice(j, 1);
 					}
+				}
+
+				if (renames.length > 1 && renames[1].time - renames[0].time < 5) {
+					// for(i=renames.length-1; i>1; i--) {
+					// 	if (renames[i].path.indexOf(renames[0].path) > -1 || renames[i].path.indexOf(renames[1].path) > -1) renames.splice(i, 1);
+					// }
 					var isProj = isProjectFolder(shareid, renames[0].path);
 					var isInProj = [isInProject(shareid, renames[0].path), isInProject(shareid, renames[1].path)];
 
